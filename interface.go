@@ -19,19 +19,16 @@ func (a *Agent) ReceiveInterfaceNotifications(ctx context.Context) {
 	for intfStreamResp := range intfStream {
 		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(intfStreamResp)
 		if err != nil {
-			a.logger.Info().
-				Msgf("Interface notification Marshal failed: %+v", err)
+			a.logger.Infof("Interface notification Marshal failed: %+v", err)
 			continue
 		}
 
-		a.logger.Info().
-			Msgf("Received Interface notifications:\n%s", b)
+		a.logger.Infof("Received Interface notifications:\n%s", b)
 
 		for _, n := range intfStreamResp.GetNotifications() {
 			intfNotif := n.GetInterface()
 			if intfNotif == nil {
-				a.logger.Info().
-					Msgf("Empty interface notification:%+v", n)
+				a.logger.Infof("Empty interface notification:%+v", n)
 				continue
 			}
 			a.Notifications.Interface <- intfNotif
@@ -43,9 +40,7 @@ func (a *Agent) ReceiveInterfaceNotifications(ctx context.Context) {
 func (a *Agent) startInterfaceNotificationStream(ctx context.Context) chan *ndk.NotificationStreamResponse {
 	streamID := a.createNotificationStream(ctx)
 
-	a.logger.Info().
-		Uint64("stream-id", streamID).
-		Msg("Interface notification stream created")
+	a.logger.Info("Interface notification stream created", "stream-id", streamID)
 
 	a.addIntfSubscription(ctx, streamID)
 

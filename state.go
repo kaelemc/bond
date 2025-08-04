@@ -19,9 +19,7 @@ var ErrStateAddOrUpdateFailed = errors.New("state add/update failed")
 // If empty path is provided, the app's root container is assumed by default
 // and the entire application state is deleted.
 func (a *Agent) DeleteState(path string) error {
-	a.logger.Info().
-		Str("path", path).
-		Msg("Deleting state")
+	a.logger.Info("Deleting state", "path", path)
 
 	// delete all app state
 	var deleteAll bool // optimize by avoiding strings.HasPrefix
@@ -33,8 +31,7 @@ func (a *Agent) DeleteState(path string) error {
 	// verify state for path was added previously
 	_, ok := a.paths[path]
 	if !ok {
-		a.logger.Error().
-			Msgf("Trying to delete state for path %s that has never been added.", path)
+		a.logger.Errorf("Trying to delete state for path %s that has never been added.", path)
 		return fmt.Errorf("%w: path: %s", ErrStateDeleteFailed, path)
 	}
 
@@ -54,7 +51,7 @@ func (a *Agent) DeleteState(path string) error {
 			Keys: []*ndk.TelemetryKey{key},
 		})
 		if err != nil || r.GetStatus() != ndk.SdkMgrStatus_SDK_MGR_STATUS_SUCCESS {
-			a.logger.Error().Msgf("Failed to delete state, response: %v", r)
+			a.logger.Errorf("Failed to delete state, response: %v", r)
 			return fmt.Errorf("%w: path: %s", ErrStateDeleteFailed, jsPath)
 		}
 		delete(a.paths, p)
@@ -72,10 +69,7 @@ func (a *Agent) DeleteState(path string) error {
 func (a *Agent) UpdateState(path, data string) error {
 	var jsPath string
 
-	a.logger.Info().
-		Str("path", path).
-		Str("data", data).
-		Msg("Updating state")
+	a.logger.Info("Updating state", "path", path, "data", data)
 
 	if path == "" {
 		path = a.appRootPath
@@ -91,7 +85,7 @@ func (a *Agent) UpdateState(path, data string) error {
 		States: []*ndk.TelemetryInfo{info},
 	}
 
-	a.logger.Info().Msgf("Telemetry Request: %+v", req)
+	a.logger.Infof("Telemetry Request: %+v", req)
 
 	r, err := a.stubs.telemetryService.TelemetryAddOrUpdate(a.ctx, req)
 	if err != nil || r.GetStatus() != ndk.SdkMgrStatus_SDK_MGR_STATUS_SUCCESS {

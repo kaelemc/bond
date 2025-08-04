@@ -94,14 +94,12 @@ func Error(e string) Message {
 // a valid acknowledgement, but with empty data.
 func (a *Agent) AcknowledgeConfig(acks ...*Acknowledgement) error {
 	if !a.configAck {
-		a.logger.Error().
-			Msgf(`Agent cannot AcknowledgeConfig if 
+		a.logger.Errorf(`Agent cannot AcknowledgeConfig if 
 				WithConfigAcknowledge option is not enabled.`)
 		return fmt.Errorf("%w", ErrAckCfgOptionNotSet)
 	}
 	if !a.streamConfig {
-		a.logger.Error().
-			Msgf(`Agent cannot AcknowledgeConfig if
+		a.logger.Errorf(`Agent cannot AcknowledgeConfig if
 				streaming of configs is not enabled.`)
 		return fmt.Errorf("%w", ErrAckCfgAndNotStreamCfg)
 	}
@@ -111,14 +109,12 @@ func (a *Agent) AcknowledgeConfig(acks ...*Acknowledgement) error {
 		Infos: infos,
 	}
 	// Call NDK RPC
-	a.logger.Info().Msgf("Acknowledge Config %v with NDK server", req)
+	a.logger.Infof("Acknowledge Config %v with NDK server", req)
 	resp, err := a.stubs.configService.AcknowledgeConfig(a.ctx, req)
 	if err != nil || resp.GetStatus() != ndk.SdkMgrStatus_SDK_MGR_STATUS_SUCCESS {
-		a.logger.Error().
-			Msgf("Failed to acknowledge config, response: %v", resp)
+		a.logger.Errorf("Failed to acknowledge config, response: %v", resp)
 		return fmt.Errorf("%w", ErrAckCfgFailed)
 	}
-	a.logger.Debug().
-		Msgf("Agent was able to acknowledge config, response: %v", resp)
+	a.logger.Debugf("Agent was able to acknowledge config, response: %v", resp)
 	return nil
 }

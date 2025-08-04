@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/charmbracelet/log"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 type Option func(*Agent) error
 
 // WithLogger sets the logger for the Agent.
-func WithLogger(logger *zerolog.Logger) Option {
+func WithLogger(logger *log.Logger) Option {
 	return func(a *Agent) error {
 		a.logger = logger
 

@@ -19,19 +19,16 @@ func (a *Agent) ReceiveBfdNotifications(ctx context.Context) {
 	for BfdStreamResp := range BfdStream {
 		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(BfdStreamResp)
 		if err != nil {
-			a.logger.Info().
-				Msgf("Bfd Session notification Marshal failed: %+v", err)
+			a.logger.Infof("Bfd Session notification Marshal failed: %+v", err)
 			continue
 		}
 
-		a.logger.Info().
-			Msgf("Received Bfd Session notifications:\n%s", b)
+		a.logger.Infof("Received Bfd Session notifications:\n%s", b)
 
 		for _, n := range BfdStreamResp.GetNotifications() {
 			BfdNotif := n.GetBfdSession()
 			if BfdNotif == nil {
-				a.logger.Info().
-					Msgf("Empty Bfd Session notification:%+v", n)
+				a.logger.Infof("Empty Bfd Session notification:%+v", n)
 				continue
 			}
 			a.Notifications.Bfd <- BfdNotif
@@ -44,9 +41,7 @@ func (a *Agent) ReceiveBfdNotifications(ctx context.Context) {
 func (a *Agent) startBfdNotificationStream(ctx context.Context) chan *ndk.NotificationStreamResponse {
 	streamID := a.createNotificationStream(ctx)
 
-	a.logger.Info().
-		Uint64("stream-id", streamID).
-		Msg("Bfd Session notification stream created")
+	a.logger.Info("Bfd Session notification stream created", "stream-id", streamID)
 
 	a.addBfdSubscription(ctx, streamID)
 

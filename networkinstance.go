@@ -19,19 +19,16 @@ func (a *Agent) ReceiveNetworkInstanceNotifications(ctx context.Context) {
 	for nwInstStreamResp := range nwInstStream {
 		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(nwInstStreamResp)
 		if err != nil {
-			a.logger.Info().
-				Msgf("Network instance notification Marshal failed: %+v", err)
+			a.logger.Infof("Network instance notification Marshal failed: %+v", err)
 			continue
 		}
 
-		a.logger.Info().
-			Msgf("Received network instance notifications:\n%s", b)
+		a.logger.Infof("Received network instance notifications:\n%s", b)
 
 		for _, n := range nwInstStreamResp.GetNotifications() {
 			nwInstNotif := n.GetNetworkInstance()
 			if nwInstNotif == nil {
-				a.logger.Info().
-					Msgf("Empty network instance notification:%+v", n)
+				a.logger.Infof("Empty network instance notification:%+v", n)
 				continue
 			}
 			a.Notifications.NwInst <- nwInstNotif
@@ -43,9 +40,7 @@ func (a *Agent) ReceiveNetworkInstanceNotifications(ctx context.Context) {
 func (a *Agent) startNwInstNotificationStream(ctx context.Context) chan *ndk.NotificationStreamResponse {
 	streamID := a.createNotificationStream(ctx)
 
-	a.logger.Info().
-		Uint64("stream-id", streamID).
-		Msg("Network Instance notification stream created")
+	a.logger.Info("Network Instance notification stream created", "stream-id", streamID)
 
 	a.addNwInstSubscription(ctx, streamID)
 

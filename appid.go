@@ -19,19 +19,16 @@ func (a *Agent) ReceiveAppIdNotifications(ctx context.Context) {
 	for AppIdStreamResp := range AppIdStream {
 		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(AppIdStreamResp)
 		if err != nil {
-			a.logger.Info().
-				Msgf("AppId notification Marshal failed: %+v", err)
+			a.logger.Infof("AppId notification Marshal failed: %+v", err)
 			continue
 		}
 
-		a.logger.Info().
-			Msgf("Received AppId notifications:\n%s", b)
+		a.logger.Infof("Received AppId notifications:\n%s", b)
 
 		for _, n := range AppIdStreamResp.GetNotifications() {
 			AppIdNotif := n.GetAppId()
 			if AppIdNotif == nil {
-				a.logger.Info().
-					Msgf("Empty AppId notification:%+v", n)
+				a.logger.Infof("Empty AppId notification:%+v", n)
 				continue
 			}
 			a.Notifications.AppId <- AppIdNotif
@@ -43,9 +40,7 @@ func (a *Agent) ReceiveAppIdNotifications(ctx context.Context) {
 func (a *Agent) startAppIdNotificationStream(ctx context.Context) chan *ndk.NotificationStreamResponse {
 	streamID := a.createNotificationStream(ctx)
 
-	a.logger.Info().
-		Uint64("stream-id", streamID).
-		Msg("AppId Notification stream created")
+	a.logger.Info("AppId Notification stream created", "stream-id", streamID)
 
 	a.addAppIdSubscription(ctx, streamID)
 

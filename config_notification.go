@@ -43,13 +43,11 @@ func (a *Agent) receiveConfigNotifications(ctx context.Context) {
 	for cfgStreamResp := range configStream {
 		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(cfgStreamResp)
 		if err != nil {
-			a.logger.Info().
-				Msgf("Config notification Marshal failed: %+v", err)
+			a.logger.Infof("Config notification Marshal failed: %+v", err)
 			continue
 		}
 
-		a.logger.Info().
-			Msgf("Received Config notifications:\n%s", b)
+		a.logger.Infof("Received Config notifications:\n%s", b)
 
 		a.handleConfigNotifications(cfgStreamResp)
 	}
@@ -59,9 +57,7 @@ func (a *Agent) receiveConfigNotifications(ctx context.Context) {
 func (a *Agent) startConfigNotificationStream(ctx context.Context) chan *ndk.NotificationStreamResponse {
 	streamID := a.createNotificationStream(ctx)
 
-	a.logger.Info().
-		Uint64("stream-id", streamID).
-		Msg("Config notification stream created")
+	a.logger.Info("Config notification stream created", "stream-id", streamID)
 
 	a.addConfigSubscription(ctx, streamID)
 
@@ -103,8 +99,7 @@ func (a *Agent) handleConfigNotifications(
 	for _, n := range notifs {
 		cfgNotif := n.GetConfig()
 		if cfgNotif == nil {
-			a.logger.Info().
-				Msgf("Empty configuration notification:%+v", n)
+			a.logger.Infof("Empty configuration notification:%+v", n)
 			continue
 		}
 
@@ -127,8 +122,7 @@ func (a *Agent) handleConfigNotifications(
 		if !a.streamConfig {
 			if cfgNotif.Key.JsPath == commitEndKeyPath &&
 				!a.isCommitSeqZero(cfgNotif.GetData().GetJson()) {
-				a.logger.Debug().
-					Msgf("Received commit end notification: %+v", cfgNotif)
+				a.logger.Debugf("Received commit end notification: %+v", cfgNotif)
 
 				a.getConfigWithGNMI()
 
@@ -151,7 +145,7 @@ func (a *Agent) isCommitSeqZero(jsonStr string) bool {
 
 	err := json.Unmarshal([]byte(jsonStr), &commitSeq)
 	if err != nil {
-		a.logger.Error().Msgf("failed to unmarshal json: %s", err)
+		a.logger.Errorf("failed to unmarshal json: %s", err)
 		return false
 	}
 
@@ -164,7 +158,7 @@ func (a *Agent) isEmptyObject(jsonStr string) bool {
 
 	err := json.Unmarshal([]byte(jsonStr), &obj)
 	if err != nil {
-		a.logger.Error().Msgf("failed to unmarshal json: %s", err)
+		a.logger.Errorf("failed to unmarshal json: %s", err)
 		return false
 	}
 

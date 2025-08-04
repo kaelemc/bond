@@ -106,15 +106,13 @@ func (a *Agent) RouteAdd(routes ...*ndk.RouteInfo) error {
 	}
 
 	// call NDK RPC
-	a.logger.Info().Msg("Add/Update routes")
+	a.logger.Info("Add/Update routes")
 	resp, err := a.stubs.routeService.RouteAddOrUpdate(a.ctx, req)
 	if err != nil || resp.GetStatus() != ndk.SdkMgrStatus_SDK_MGR_STATUS_SUCCESS {
-		a.logger.Error().
-			Msgf("Failed to add/update routes, response: %v", resp)
+		a.logger.Errorf("Failed to add/update routes, response: %v", resp)
 		return fmt.Errorf("%w", ErrRouteAddOrUpdateFailed)
 	}
-	a.logger.Debug().
-		Msgf("Successfully added/updated routes, response: %v", resp)
+	a.logger.Debugf("Successfully added/updated routes, response: %v", resp)
 	return nil
 }
 
@@ -168,8 +166,7 @@ func (a *Agent) RouteDelete(networkInstance string, prefixes ...string) error {
 	for _, prefix := range prefixes {
 		addr, preflen := parseIP(prefix)
 		if addr == nil || preflen == 0 {
-			a.logger.Error().
-				Msgf("Invalid IP prefix %s.", addr)
+			a.logger.Errorf("Invalid IP prefix %s.", addr)
 			return fmt.Errorf("%w", ErrInvalidIpAddr)
 		}
 		prefix := &ndk.IpAddrPrefLenPb{
@@ -187,15 +184,13 @@ func (a *Agent) RouteDelete(networkInstance string, prefixes ...string) error {
 	}
 
 	// call NDK RPC
-	a.logger.Info().Msg("Delete routes")
+	a.logger.Info("Delete routes")
 	resp, err := a.stubs.routeService.RouteDelete(a.ctx, req)
 	if err != nil || resp.GetStatus() != ndk.SdkMgrStatus_SDK_MGR_STATUS_SUCCESS {
-		a.logger.Error().
-			Msgf("Failed to delete routes, response: %v", resp)
+		a.logger.Errorf("Failed to delete routes, response: %v", resp)
 		return fmt.Errorf("%w", ErrRouteDeleteFailed)
 	}
-	a.logger.Debug().
-		Msgf("Successfully deleted routes, response: %v", resp)
+	a.logger.Debugf("Successfully deleted routes, response: %v", resp)
 	return nil
 }
 
@@ -203,12 +198,10 @@ func (a *Agent) RouteDelete(networkInstance string, prefixes ...string) error {
 func (a *Agent) routeSyncStart() error {
 	resp, err := a.stubs.routeService.SyncStart(a.ctx, &ndk.SyncRequest{})
 	if err != nil || resp.GetStatus() != ndk.SdkMgrStatus_SDK_MGR_STATUS_SUCCESS {
-		a.logger.Error().
-			Msgf("Failure to start syncing routes, response: %v", resp)
+		a.logger.Errorf("Failure to start syncing routes, response: %v", resp)
 		return fmt.Errorf("%w", ErrRouteSyncStart)
 	}
-	a.logger.Debug().
-		Msgf("Successfully started route sync, response: %v", resp)
+	a.logger.Debugf("Successfully started route sync, response: %v", resp)
 	return nil
 }
 
@@ -216,12 +209,10 @@ func (a *Agent) routeSyncStart() error {
 func (a *Agent) routeSyncEnd() error {
 	resp, err := a.stubs.routeService.SyncEnd(a.ctx, &ndk.SyncRequest{})
 	if err != nil || resp.GetStatus() != ndk.SdkMgrStatus_SDK_MGR_STATUS_SUCCESS {
-		a.logger.Error().
-			Msgf("Failure to stop syncing routes, response: %v", resp)
+		a.logger.Errorf("Failure to stop syncing routes, response: %v", resp)
 		return fmt.Errorf("%w", ErrRouteSyncEnd)
 	}
-	a.logger.Debug().
-		Msgf("Successfully ended route sync, response: %v", resp)
+	a.logger.Debugf("Successfully ended route sync, response: %v", resp)
 	return nil
 }
 
