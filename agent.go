@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/nokia/srlinux-ndk-go/ndk"
 	"github.com/openconfig/gnmic/pkg/api/target"
-	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -42,7 +42,7 @@ type Agent struct {
 	paths map[string]struct{}
 
 	gRPCConn        *grpc.ClientConn
-	logger          *zerolog.Logger
+	logger          *log.Logger
 	retryTimeout    time.Duration
 	GnmiTarget      *target.Target
 	keepAliveConfig *keepAliveConfig
@@ -138,7 +138,7 @@ func (a *Agent) Start() error {
 		return err
 	}
 
-	a.logger.Info().Msg("Connected to NDK socket")
+	a.logger.Info("Connected to NDK socket")
 
 	// create NDK client stubs
 	a.stubs = &stubs{
@@ -187,32 +187,25 @@ func (a *Agent) exitHandler() {
 func (a *Agent) stop() {
 	defer a.cancel() // cancel app context
 
-	a.logger.Info().
-		Msg("Application has stopped and will exit gracefully.")
+	a.logger.Info("Application has stopped and will exit gracefully.")
 
 	// unregister agent
 	err := a.unregister()
 	if err != nil {
-		a.logger.Error().
-			Err(err).
-			Msg("Application has failed to unregister.")
+		a.logger.Error("Application has failed to unregister.", "err", err)
 		return
 	}
 
 	// close gRPC connection
 	err = a.gRPCConn.Close()
 	if err != nil {
-		a.logger.Error().
-			Err(err).
-			Msg("Closing gRPC connection to NDK server failed")
+		a.logger.Error("Closing gRPC connection to NDK server failed.", "err", err)
 	}
 
 	// close gNMI target
 	err = a.GnmiTarget.Close()
 	if err != nil {
-		a.logger.Error().
-			Err(err).
-			Msg("Closing gNMI target failed")
+		a.logger.Error("Closing gNMI target failed", "err", err)
 	}
 }
 
@@ -242,25 +235,20 @@ func (a *Agent) register() error {
 		}
 		resp, err = a.stubs.sdkMgrService.AgentRegister(a.ctx, req)
 		if err == nil && resp.Status == ndk.SdkMgrStatus_SDK_MGR_STATUS_SUCCESS {
-			a.logger.Info().
-				Uint32("app-id", resp.GetAppId()).
-				Str("name", a.Name).
-				Bool("config-ack", a.configAck).
-				Bool("auto-telemetry-state", a.autoCfgState).
-				Bool("cache-notifications", a.cacheNotifications).
-				Msg("Application registered successfully!")
+			a.logger.Info("Application registered successfully!",
+				"app-id", resp.GetAppId(),
+				"name", a.Name,
+				"config-ack", a.configAck,
+				"auto-telemetry-state", a.autoCfgState,
+				"cache-notificatons", a.cacheNotifications)
 
 			return nil
 		}
 
-		a.logger.Warn().
-			Err(err).
-			Str("status", resp.GetStatus().String()).
-			Msgf("Agent registration failed %d out of %d times", i, defaultMaxRetries)
+		a.logger.Warnf("Agent registration failed %d out of %d times", i, defaultMaxRetries, "status", resp.GetStatus().String())
 
 		if i < defaultMaxRetries {
-			a.logger.Warn().
-				Msgf("Retrying agent registration in %.1f seconds", a.retryTimeout.Seconds())
+			a.logger.Warnf("Retrying agent registration in %.1f seconds", a.retryTimeout.Seconds())
 			time.Sleep(a.retryTimeout)
 		}
 	}
@@ -271,18 +259,12 @@ func (a *Agent) register() error {
 func (a *Agent) unregister() error {
 	r, err := a.stubs.sdkMgrService.AgentUnRegister(a.ctx, &ndk.AgentRegistrationRequest{})
 	if err != nil || r.Status != ndk.SdkMgrStatus_SDK_MGR_STATUS_SUCCESS {
-		a.logger.Fatal().
-			Err(err).
-			Str("status", r.GetStatus().String()).
-			Msg("Agent unregistration failed")
+		a.logger.Fatal("Agent unregistration failed.", "status", r.GetStatus().String())
 
 		return fmt.Errorf("agent unregistration failed")
 	}
 
-	a.logger.Info().
-		Uint32("app-id", r.GetAppId()).
-		Str("name", a.Name).
-		Msg("Application unregistered successfully!")
+	a.logger.Info("Application unregistered successfully!", "app-id", r.GetAppId(), "name", a.Name)
 
 	return nil
 }
@@ -298,18 +280,13 @@ func (a *Agent) keepAlive(ctx context.Context, interval time.Duration, threshold
 		case <-ctx.Done():
 			timer.Stop()
 
-			a.logger.Info().
-				Str("name", a.Name).
-				Msg("context has been cancelled, agent stopped sending keepalives.")
+			a.logger.Info("context has been cancelled, agent stopped sending keepalives.", "name", a.Name)
 			return
 
 		case <-timer.C: // send keepalives every interval
 			resp, err := a.stubs.sdkMgrService.KeepAlive(a.ctx, &ndk.KeepAliveRequest{})
 			if err != nil { // retry RPC if failure
-				a.logger.Info().
-					Err(err).
-					Str("status", resp.GetStatus().String()).
-					Msgf("Agent failed to send keepalives., retrying in %s", a.retryTimeout)
+				a.logger.Infof("Agent failed to send keepalives., retrying in %s", a.retryTimeout, "err", err, "status", resp.GetStatus().String())
 
 				time.Sleep(a.retryTimeout)
 
@@ -318,16 +295,12 @@ func (a *Agent) keepAlive(ctx context.Context, interval time.Duration, threshold
 
 			status := resp.GetStatus()
 
-			a.logger.Info().
-				Str("name", a.Name).
-				Msgf("Agent sent keepalive at %s and received response status: %s", time.Now(), status.String())
+			a.logger.Infof("Agent sent keepalive at %s and received response status: %s", time.Now(), status.String(), "name", a.Name)
 
 			if status == ndk.SdkMgrStatus_SDK_MGR_STATUS_FAILED { // sdk_mgr has failed
 				errCounter += 1
 				if errCounter >= a.keepAliveConfig.threshold {
-					a.logger.Info().
-						Str("name", a.Name).
-						Msgf("Agent keepalives have been stopped because sdk mgr has failed %d times.", threshold)
+					a.logger.Infof("Agent keepalives have been stopped because sdk mgr has failed %d times.", threshold, "name", a.Name)
 					return
 				}
 			} else { //sdk_mgr status is success
