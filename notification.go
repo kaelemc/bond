@@ -111,10 +111,7 @@ func (a *Agent) startNotificationStream(ctx context.Context,
 ) {
 	defer close(streamChan)
 
-	a.logger.Info().
-		Uint64("stream-id", streamID).
-		Str("subscription-type", subscType).
-		Msg("Starting streaming notifications")
+	a.logger.Info("Starting streaming notifications", "stream-id", streamID, "subscription-type", subscType)
 
 	streamClient := a.getNotificationStreamClient(ctx, streamID)
 
@@ -123,17 +120,11 @@ func (a *Agent) startNotificationStream(ctx context.Context,
 
 		select {
 		case <-ctx.Done():
-			a.logger.Info().
-				Uint64("stream-id", streamID).
-				Str("subscription-type", subscType).
-				Msg("agent context has cancelled, exiting notification stream")
+			a.logger.Info("agent context has cancelled, exiting notification stream", "stream-id", streamID, "subscription-type", subscType)
 			return
 		default:
 			if err == io.EOF {
-				a.logger.Info().
-					Uint64("stream-id", streamID).
-					Str("subscription-type", subscType).
-					Msgf("received EOF, retrying in %s", a.retryTimeout)
+				a.logger.Info("received EOF, retrying", "timeout", a.retryTimeout, "stream-id", streamID, "subscription-type", subscType)
 
 				time.Sleep(a.retryTimeout)
 
@@ -141,12 +132,7 @@ func (a *Agent) startNotificationStream(ctx context.Context,
 			}
 
 			if err != nil {
-				a.logger.Error().
-					Err(err).
-					Str("timestamp", time.Now().String()).
-					Uint64("stream-id", streamID).
-					Str("subscription-type", subscType).
-					Msgf("failed to receive notification, retrying in %s", a.retryTimeout)
+				a.logger.Error("failed to receive notification, retrying", "timeout", a.retryTimeout, "err", err, "timestamp", time.Now().String(), "stream-id", streamID, "subscription-type", subscType)
 
 				time.Sleep(a.retryTimeout)
 
@@ -167,7 +153,7 @@ func (a *Agent) getNotificationStreamClient(ctx context.Context, streamID uint64
 				StreamId: streamID,
 			})
 		if err != nil {
-			a.logger.Info().Msgf("agent %s failed creating stream client with stream ID=%d: %v", a.Name, streamID, err)
+			a.logger.Infof("agent %s failed creating stream client with stream ID=%d: %v", a.Name, streamID, err)
 			a.logger.Printf("agent %s retrying in %s", a.Name, a.retryTimeout)
 
 			time.Sleep(a.retryTimeout)

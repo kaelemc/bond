@@ -19,19 +19,16 @@ func (a *Agent) ReceiveRouteNotifications(ctx context.Context) {
 	for routeStreamResp := range routeStream {
 		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(routeStreamResp)
 		if err != nil {
-			a.logger.Info().
-				Msgf("Route notification Marshal failed: %+v", err)
+			a.logger.Infof("Route notification Marshal failed: %+v", err)
 			continue
 		}
 
-		a.logger.Info().
-			Msgf("Received Route notifications:\n%s", b)
+		a.logger.Infof("Received Route notifications:\n%s", b)
 
 		for _, n := range routeStreamResp.GetNotifications() {
 			routeNotif := n.GetRoute()
 			if routeNotif == nil {
-				a.logger.Info().
-					Msgf("Empty route notification:%+v", n)
+				a.logger.Infof("Empty route notification:%+v", n)
 				continue
 			}
 			a.Notifications.Route <- routeNotif
@@ -43,9 +40,7 @@ func (a *Agent) ReceiveRouteNotifications(ctx context.Context) {
 func (a *Agent) startRouteNotificationStream(ctx context.Context) chan *ndk.NotificationStreamResponse {
 	streamID := a.createNotificationStream(ctx)
 
-	a.logger.Info().
-		Uint64("stream-id", streamID).
-		Msg("Route notification stream created")
+	a.logger.Info("Route notification stream created", "stream-id", streamID)
 
 	a.addRouteSubscription(ctx, streamID)
 

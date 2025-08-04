@@ -19,19 +19,16 @@ func (a *Agent) ReceiveLLDPNotifications(ctx context.Context) {
 	for LldpStreamResp := range LldpStream {
 		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(LldpStreamResp)
 		if err != nil {
-			a.logger.Info().
-				Msgf("Lldp Neighbor notification Marshal failed: %+v", err)
+			a.logger.Infof("Lldp Neighbor notification Marshal failed: %+v", err)
 			continue
 		}
 
-		a.logger.Info().
-			Msgf("Received Lldp Neighbor notifications:\n%s", b)
+		a.logger.Infof("Received Lldp Neighbor notifications:\n%s", b)
 
 		for _, n := range LldpStreamResp.GetNotifications() {
 			LldpNotif := n.GetLldpNeighbor()
 			if LldpNotif == nil {
-				a.logger.Info().
-					Msgf("Empty Lldp Neighbor notification:%+v", n)
+				a.logger.Infof("Empty Lldp Neighbor notification:%+v", n)
 				continue
 			}
 			a.Notifications.Lldp <- LldpNotif
@@ -43,9 +40,7 @@ func (a *Agent) ReceiveLLDPNotifications(ctx context.Context) {
 func (a *Agent) startLldpNotificationStream(ctx context.Context) chan *ndk.NotificationStreamResponse {
 	streamID := a.createNotificationStream(ctx)
 
-	a.logger.Info().
-		Uint64("stream-id", streamID).
-		Msg("Lldp Neighbor notification stream created")
+	a.logger.Info("Lldp Neighbor notification stream created", "stream-id", streamID)
 
 	a.addLldpSubscription(ctx, streamID)
 

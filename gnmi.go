@@ -16,7 +16,7 @@ const (
 var ErrorEmptyValue = errors.New("value to set request cannot be empty")
 
 func (a *Agent) newGNMITarget() error {
-	a.logger.Debug().Msg("creating gNMI Client")
+	a.logger.Debug("creating gNMI Client")
 	grpcServerUnixSocket := grpcServerUnixSocketPrefix + a.grpcServerName
 	// create a target
 	target, err := api.NewTarget(
@@ -28,7 +28,7 @@ func (a *Agent) newGNMITarget() error {
 		api.Timeout(10*time.Second),
 	)
 	if err != nil {
-		a.logger.Fatal().Err(err).Msg("gNMI target creation failed")
+		a.logger.Fatal("gNMI target creation failed", "err", err)
 		return err
 	}
 
@@ -36,10 +36,10 @@ func (a *Agent) newGNMITarget() error {
 
 	err = a.GnmiTarget.CreateGNMIClient(a.ctx)
 	if err != nil {
-		a.logger.Fatal().Err(err).Msg("gNMI Client creation failed")
+		a.logger.Fatal("gNMI Client creation failed", "err", err)
 	}
 
-	a.logger.Debug().Msg("gNMI Client created")
+	a.logger.Debug("gNMI Client created")
 
 	return err
 }
@@ -120,10 +120,10 @@ func NewSetDeleteRequest(path string, opts ...api.GNMIOption) (*gnmi.SetRequest,
 func (a *Agent) GetWithGNMI(req *gnmi.GetRequest) (*gnmi.GetResponse, error) {
 	resp, err := a.GnmiTarget.Get(a.ctx, req)
 	if err != nil {
-		a.logger.Fatal().Err(err).Msg("failed executing GetRequest")
+		a.logger.Fatal("failed executing GetRequest", "err", err)
 	}
 
-	a.logger.Debug().Msgf("gNMI Get response: %+v", resp)
+	a.logger.Debugf("gNMI Get response: %+v", resp)
 	return resp, err
 }
 
@@ -132,10 +132,10 @@ func (a *Agent) GetWithGNMI(req *gnmi.GetRequest) (*gnmi.GetResponse, error) {
 func (a *Agent) SetWithGNMI(req *gnmi.SetRequest) (*gnmi.SetResponse, error) {
 	resp, err := a.GnmiTarget.Set(a.ctx, req)
 	if err != nil {
-		a.logger.Fatal().Err(err).Msg("failed executing SetRequest")
+		a.logger.Fatal("failed executing SetRequest", "err", err)
 	}
 
-	a.logger.Debug().Msgf("gNMI Set response: %+v", resp)
+	a.logger.Debugf("gNMI Set response: %+v", resp)
 	return resp, err
 }
 
@@ -144,9 +144,7 @@ func (a *Agent) SetWithGNMI(req *gnmi.SetRequest) (*gnmi.SetResponse, error) {
 // gNMI Get Request returns the config in the json_ietf encoding.
 // The received config is meant to be used by the NDK app to populate its Config and State struct.
 func (a *Agent) getConfigWithGNMI() {
-	a.logger.Info().
-		Str("path", a.appRootPath).
-		Msg("Getting config with gNMI")
+	a.logger.Info("Getting config with gNMI", "path", a.appRootPath)
 
 	// reset the config as it might contain the previous config
 	// and in case we receive an empty config (when config was deleted),
@@ -160,7 +158,7 @@ func (a *Agent) getConfigWithGNMI() {
 		api.DataTypeCONFIG(),
 	)
 	if err != nil {
-		a.logger.Fatal().Err(err).Msg("failed to create GetRequest")
+		a.logger.Fatal("failed to create GetRequest", "err", err)
 	}
 
 	getResp, err := a.GetWithGNMI(getReq)
@@ -175,6 +173,6 @@ func (a *Agent) getConfigWithGNMI() {
 			GetVal().
 			GetJsonIetfVal()
 
-		a.logger.Info().Msgf("Full config received via gNMI:\n%s", a.Notifications.FullConfig)
+		a.logger.Infof("Full config received via gNMI:\n%s", a.Notifications.FullConfig)
 	}
 }

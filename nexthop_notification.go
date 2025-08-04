@@ -19,19 +19,16 @@ func (a *Agent) ReceiveNexthopGroupNotifications(ctx context.Context) {
 	for nhgStreamResp := range nhgStream {
 		b, err := prototext.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(nhgStreamResp)
 		if err != nil {
-			a.logger.Info().
-				Msgf("Nexthop group notification Marshal failed: %+v", err)
+			a.logger.Infof("Nexthop group notification Marshal failed: %+v", err)
 			continue
 		}
 
-		a.logger.Info().
-			Msgf("Received Nexthop group notifications:\n%s", b)
+		a.logger.Infof("Received Nexthop group notifications:\n%s", b)
 
 		for _, n := range nhgStreamResp.GetNotifications() {
 			nhgNotif := n.GetNexthopGroup()
 			if nhgNotif == nil {
-				a.logger.Info().
-					Msgf("Empty Nexthop group notification:%+v", n)
+				a.logger.Infof("Empty Nexthop group notification:%+v", n)
 				continue
 			}
 			a.Notifications.NextHopGroup <- nhgNotif
@@ -43,9 +40,7 @@ func (a *Agent) ReceiveNexthopGroupNotifications(ctx context.Context) {
 func (a *Agent) startNhgNotificationStream(ctx context.Context) chan *ndk.NotificationStreamResponse {
 	streamID := a.createNotificationStream(ctx)
 
-	a.logger.Info().
-		Uint64("stream-id", streamID).
-		Msg("Nhg Notification stream created")
+	a.logger.Info("Nhg Notification stream created", "stream-id", streamID)
 
 	a.addNhgSubscription(ctx, streamID)
 
