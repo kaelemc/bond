@@ -245,7 +245,7 @@ func (a *Agent) register() error {
 			return nil
 		}
 
-		a.logger.Warnf("Agent registration failed %d out of %d times", i, defaultMaxRetries, "status", resp.GetStatus().String())
+		a.logger.With("status", resp.GetStatus().String()).Warnf("Agent registration failed %d out of %d times", i, defaultMaxRetries)
 
 		if i < defaultMaxRetries {
 			a.logger.Warnf("Retrying agent registration in %.1f seconds", a.retryTimeout.Seconds())
@@ -286,7 +286,7 @@ func (a *Agent) keepAlive(ctx context.Context, interval time.Duration, threshold
 		case <-timer.C: // send keepalives every interval
 			resp, err := a.stubs.sdkMgrService.KeepAlive(a.ctx, &ndk.KeepAliveRequest{})
 			if err != nil { // retry RPC if failure
-				a.logger.Infof("Agent failed to send keepalives., retrying in %s", a.retryTimeout, "err", err, "status", resp.GetStatus().String())
+				a.logger.With("err", err, "status", resp.GetStatus().String()).Infof("Agent failed to send keepalives., retrying in %s", a.retryTimeout)
 
 				time.Sleep(a.retryTimeout)
 
@@ -295,12 +295,12 @@ func (a *Agent) keepAlive(ctx context.Context, interval time.Duration, threshold
 
 			status := resp.GetStatus()
 
-			a.logger.Infof("Agent sent keepalive at %s and received response status: %s", time.Now(), status.String(), "name", a.Name)
+			a.logger.With("name", a.Name).Infof("Agent sent keepalive at %s and received response status: %s", time.Now(), status.String())
 
 			if status == ndk.SdkMgrStatus_SDK_MGR_STATUS_FAILED { // sdk_mgr has failed
 				errCounter += 1
 				if errCounter >= a.keepAliveConfig.threshold {
-					a.logger.Infof("Agent keepalives have been stopped because sdk mgr has failed %d times.", threshold, "name", a.Name)
+					a.logger.With("name", a.Name).Infof("Agent keepalives have been stopped because sdk mgr has failed %d times.", threshold)
 					return
 				}
 			} else { //sdk_mgr status is success
